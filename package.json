@@ -2,7 +2,7 @@
   "name": "cline-rag",
   "displayName": "Cline with a hat --- RAG Support",
   "description": "Enhanced version of Cline with RAG (Retrieval-Augmented Generation) capabilities. Provides context-aware coding assistance by leveraging your project's documentation and codebase, along with all original Cline features.",
-  "version": "2.1.6-0.1.6",
+  "version": "2.1.6-0.1.8",
   "icon": "assets/icons/icon.png",
   "galleryBanner": {
     "color": "#617A91",
