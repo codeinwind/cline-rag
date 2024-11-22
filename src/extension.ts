@@ -39,16 +39,6 @@ const checkWorkspaceHasGit = async (): Promise<boolean> => {
     return false;
 }
 
-// Function to prompt user to add RAG support
-const promptForRAGSupport = async (): Promise<boolean> => {
-    const answer = await vscode.window.showInformationMessage(
-        "Would you like to add RAG (Retrieval-Augmented Generation) support to this repository?",
-        "Yes",
-        "No"
-    );
-    return answer === "Yes";
-};
-
 // Function to initialize RAG support
 const initializeRAGSupport = async (context: vscode.ExtensionContext): Promise<void> => {
     if (!ragManager) {
@@ -93,14 +83,9 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand('setContext', 'workspaceHasGit', hasGit);
     });
 
-    // Check for RAG support and prompt user
+    // Check for RAG support and initialize if exists
     checkLocalRAGSupport().then(async (hasRAG) => {
-        if (!hasRAG) {
-            const shouldAdd = await promptForRAGSupport();
-            if (shouldAdd) {
-                await initializeRAGSupport(context);
-            }
-        } else if (!ragManager.isServerRunning()) {
+        if (hasRAG && !ragManager.isServerRunning()) {
             // If RAG folder exists but server isn't running, start it
             await ragManager.initialize();
         }
