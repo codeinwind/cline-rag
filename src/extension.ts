@@ -6,23 +6,60 @@ import { ClineProvider } from "./core/webview/ClineProvider"
 import { createClineAPI } from "./exports"
 import "./utils/path" // necessary to have access to String.prototype.toPosix
 import { DIFF_VIEW_URI_SCHEME } from "./integrations/editor/DiffViewProvider"
+import { RAGManager } from "./services/rag/rag_manager"
+
+let outputChannel: vscode.OutputChannel
+let ragManager: RAGManager
 
 // Function to check for local RAG support
 const checkLocalRAGSupport = async (): Promise<boolean> => {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (workspaceFolders) {
         try {
-            const ragFolderExists = await vscode.workspace.fs.stat(vscode.Uri.file(`${workspaceFolders[0].uri.fsPath}/.rag`));
+            await vscode.workspace.fs.stat(vscode.Uri.file(`${workspaceFolders[0].uri.fsPath}/.rag`));
             return true; // Folder exists
         } catch {
-            vscode.window.showInformationMessage("Local RAG support is not added. Please create a folder named '.rag' in the root directory.");
             return false; // Folder does not exist
         }
-    } else {
-        vscode.window.showInformationMessage("No workspace folder is open. Please open a workspace to check for local RAG support.");
-        return false; // No workspace folder
     }
+    return false;
 }
+
+// Function to check if workspace has Git
+const checkWorkspaceHasGit = async (): Promise<boolean> => {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders) {
+        try {
+            await vscode.workspace.fs.stat(vscode.Uri.joinPath(workspaceFolders[0].uri, '.git'));
+            return true; // Git folder exists
+        } catch {
+            return false; // Git folder does not exist
+        }
+    }
+    return false;
+}
+
+// Function to prompt user to add RAG support
+const promptForRAGSupport = async (): Promise<boolean> => {
+    const answer = await vscode.window.showInformationMessage(
+        "Would you like to add RAG (Retrieval-Augmented Generation) support to this repository?",
+        "Yes",
+        "No"
+    );
+    return answer === "Yes";
+};
+
+// Function to initialize RAG support
+const initializeRAGSupport = async (context: vscode.ExtensionContext): Promise<void> => {
+    if (!ragManager) {
+        ragManager = new RAGManager(context);
+    }
+
+    const success = await ragManager.initialize();
+    if (success) {
+        vscode.window.showInformationMessage("RAG support has been successfully initialized!");
+    }
+};
 
 /*
 Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -30,10 +67,7 @@ Built using https://github.com/microsoft/vscode-webview-ui-toolkit
 Inspired by
 https://github.com/microsoft/vscode-webview-ui-toolkit-samples/tree/main/default/weather-webview
 https://github.com/microsoft/vscode-webview-ui-toolkit-samples/tree/main/frameworks/hello-world-react-cra
-
 */
-
-let outputChannel: vscode.OutputChannel
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -43,8 +77,34 @@ export function activate(context: vscode.ExtensionContext) {
 
     outputChannel.appendLine("Cline extension activated")
 
-    // Check for local RAG support
-    checkLocalRAGSupport();
+    // Initialize RAG manager
+    ragManager = new RAGManager(context);
+    context.subscriptions.push({ dispose: () => ragManager.dispose() });
+
+    // Register RAG commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand("cline.initializeRAG", async () => {
+            await initializeRAGSupport(context);
+        })
+    );
+
+    // Set up Git context
+    checkWorkspaceHasGit().then(hasGit => {
+        vscode.commands.executeCommand('setContext', 'workspaceHasGit', hasGit);
+    });
+
+    // Check for RAG support and prompt user
+    checkLocalRAGSupport().then(async (hasRAG) => {
+        if (!hasRAG) {
+            const shouldAdd = await promptForRAGSupport();
+            if (shouldAdd) {
+                await initializeRAGSupport(context);
+            }
+        } else if (!ragManager.isServerRunning()) {
+            // If RAG folder exists but server isn't running, start it
+            await ragManager.initialize();
+        }
+    });
 
     const sidebarProvider = new ClineProvider(context, outputChannel)
 
@@ -71,7 +131,7 @@ export function activate(context: vscode.ExtensionContext) {
 		//const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined
         const lastCol = Math.max(...vscode.window.visibleTextEditors.map((editor) => editor.viewColumn || 0))
 
-		// Check if there are any visible text editors, otherwise open a new group to the right
+        // Check if there are any visible text editors, otherwise open a new group to the right
         const hasVisibleEditors = vscode.window.visibleTextEditors.length > 0
         if (!hasVisibleEditors) {
             await vscode.commands.executeCommand("workbench.action.newGroupRight")
@@ -91,7 +151,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         tabProvider.resolveWebviewView(panel)
 
-		// Lock the editor group so clicking on files doesn't open them over the panel
+        // Lock the editor group so clicking on files doesn't open them over the panel
         await delay(100)
         await vscode.commands.executeCommand("workbench.action.lockEditorGroup")
     }
@@ -128,7 +188,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.registerTextDocumentContentProvider(DIFF_VIEW_URI_SCHEME, diffContentProvider)
     )
 
-	// URI Handler
+    // URI Handler
     const handleUri = async (uri: vscode.Uri) => {
         const path = uri.path
         const query = new URLSearchParams(uri.query.replace(/\+/g, "%2B"))
@@ -155,5 +215,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export function deactivate() {
+    if (ragManager) {
+        ragManager.dispose();
+    }
     outputChannel.appendLine("Cline extension deactivated")
 }

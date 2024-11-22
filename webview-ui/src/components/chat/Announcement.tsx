@@ -1,8 +1,5 @@
 import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 import { memo } from "react"
-// import VSCodeButtonLink from "./VSCodeButtonLink"
-// import { getOpenRouterAuthUrl } from "./ApiOptions"
-// import { vscode } from "../utils/vscode"
 
 interface AnnouncementProps {
 	version: string
@@ -46,59 +43,33 @@ const Announcement = ({ version, hideAnnouncement }: AnnouncementProps) => {
 					see a full demo here.
 				</VSCodeLink>
 			</p>
-			{/*<ul style={{ margin: "0 0 8px", paddingLeft: "12px" }}>
-				 <li>
-					OpenRouter now supports prompt caching! They also have much higher rate limits than other providers,
-					so I recommend trying them out.
-					<br />
-					{!apiConfiguration?.openRouterApiKey && (
-						<VSCodeButtonLink
-							href={getOpenRouterAuthUrl(vscodeUriScheme)}
-							style={{
-								transform: "scale(0.85)",
-								transformOrigin: "left center",
-								margin: "4px -30px 2px 0",
-							}}>
-							Get OpenRouter API Key
-						</VSCodeButtonLink>
-					)}
-					{apiConfiguration?.openRouterApiKey && apiConfiguration?.apiProvider !== "openrouter" && (
-						<VSCodeButton
-							onClick={() => {
-								vscode.postMessage({
-									type: "apiConfiguration",
-									apiConfiguration: { ...apiConfiguration, apiProvider: "openrouter" },
-								})
-							}}
-							style={{
-								transform: "scale(0.85)",
-								transformOrigin: "left center",
-								margin: "4px -30px 2px 0",
-							}}>
-							Switch to OpenRouter
-						</VSCodeButton>
-					)}
-				</li> 
-				<li>
-					<b>Edit Cline's changes before accepting!</b> When he creates or edits a file, you can modify his
-					changes directly in the right side of the diff view (+ hover over the 'Revert Block' arrow button in
-					the center to undo "<code>{"// rest of code here"}</code>" shenanigans)
-				</li>
-				<li>
-					New <code>search_files</code> tool that lets Cline perform regex searches in your project, letting
-					him refactor code, address TODOs and FIXMEs, remove dead code, and more!
-				</li>
-				<li>
-					When Cline runs commands, you can now type directly in the terminal (+ support for Python
-					environments)
-				</li>
-			</ul>*/}
+			<p style={{ margin: "5px 0px" }}>
+				📚 Introducing Local RAG Support! Enhance your conversations with context from your own knowledge base. 
+				Press <code>Cmd+Shift+P</code> (<code>Ctrl+Shift+P</code> on Windows/Linux) and run "Initialize RAG" to set up your 
+				documentation, codebase, or any text files as a knowledge source.
+			</p>
+			<p style={{ margin: "5px 0px" }}>
+				Built with a robust architecture:
+				<ul style={{ margin: "8px 0 8px 20px", paddingLeft: "0" }}>
+					<li><strong>Embedding Engine:</strong> Uses all-MiniLM-L6-v2 model to convert text into high-quality vector representations</li>
+					<li><strong>Vector Store:</strong> FAISS-powered similarity search for efficient context retrieval</li>
+					<li><strong>API Layer:</strong> FastAPI server enabling seamless integration with VSCode</li>
+					<li><strong>TypeScript Interface:</strong> Robust RAG operations management in the VSCode environment</li>
+				</ul>
+				Perfect for:
+				<ul style={{ margin: "8px 0 8px 20px", paddingLeft: "0" }}>
+					<li>Project-specific queries and documentation assistance</li>
+					<li>Codebase understanding and technical discussions</li>
+					<li>Custom knowledge base integration</li>
+				</ul>
+				Try asking questions about your files after initialization!
+			</p>
 			<p style={{ margin: "0" }}>
-				Join
+				Join{" "}
 				<VSCodeLink style={{ display: "inline" }} href="https://discord.gg/cline">
 					discord.gg/cline
 				</VSCodeLink>
-				for more updates!
+				{" "}for more updates!
 			</p>
 		</div>
 	)

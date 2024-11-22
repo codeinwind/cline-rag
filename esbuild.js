@@ -62,6 +62,36 @@ const copyWasmFiles = {
 	},
 }
 
+const copyRAGFiles = {
+	name: "copy-rag-files",
+	setup(build) {
+		build.onEnd(() => {
+			const sourceDir = path.join(__dirname, "src", "services", "rag")
+			const targetDir = path.join(__dirname, "dist", "services", "rag")
+
+			// Create the target directory if it doesn't exist
+			if (!fs.existsSync(targetDir)) {
+				fs.mkdirSync(targetDir, { recursive: true })
+			}
+
+			// List of RAG service files to copy
+			const ragFiles = [
+				"setup.js",
+				"start.js",
+				"app.py",
+				"embedding_manager.py",
+				"faiss_manager.py",
+				"README.md"
+			]
+
+			// Copy each RAG file
+			ragFiles.forEach((file) => {
+				fs.copyFileSync(path.join(sourceDir, file), path.join(targetDir, file))
+			})
+		})
+	},
+}
+
 const extensionConfig = {
 	bundle: true,
 	minify: production,
@@ -69,7 +99,7 @@ const extensionConfig = {
 	logLevel: "silent",
 	plugins: [
 		copyWasmFiles,
-		/* add to the end of plugins array */
+		copyRAGFiles,
 		esbuildProblemMatcherPlugin,
 	],
 	entryPoints: ["src/extension.ts"],
